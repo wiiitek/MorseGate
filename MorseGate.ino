@@ -1,14 +1,18 @@
 #include <ESP8266WiFi.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
+#include <Thread.h>
 #include <FS.h>
 
-const int led = LED_BUILTIN;
+const int BLINKING_LED = LED_BUILTIN;
 const byte DNS_PORT = 53;
 const String apTitle = "Morse Gate";
+
 IPAddress apIP(192, 168, 96, 1);
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
+
+Thread blinkingThread = Thread();
 
 String contentType(String filename) {
   if (filename.endsWith(".html")) {
@@ -42,9 +46,18 @@ bool processRequest(String path) {
   return false;
 }
 
+void blinkTask() {
+  digitalWrite(BLINKING_LED, !digitalRead(BLINKING_LED));
+}
+
 void setup() {
   Serial.begin(9600);
   Serial.print("\n\n");
+
+  pinMode(BLINKING_LED, OUTPUT);
+  blinkingThread.onRun(blinkTask);
+  blinkingThread.setInterval(500);
+  Serial.println("Blinking thread was initialized");
 
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
@@ -96,6 +109,9 @@ void setup() {
 }
 
 void loop() {
+  if(blinkingThread.shouldRun()) {
+    blinkingThread.run();
+  }
   dnsServer.processNextRequest();
   webServer.handleClient();
 }
