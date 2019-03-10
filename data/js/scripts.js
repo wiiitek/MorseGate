@@ -6,6 +6,7 @@ $(document).ready(function () {
   var $sendButton = $('#send-button');
   var $errors = $('#errors');
   var $messageInput = $('#message');
+  var $wpmInput = $('#wpm');
   var statusErrorReported = false;
 
   (function downloadAndCacheCloseIcon() {
@@ -19,7 +20,12 @@ $(document).ready(function () {
     setButtonDisabled(true);
     var msg = $messageInput.val();
     var paramValue = encodeURIComponent(msg);
-    $.ajax(sendUrl + paramValue, { cache: false })
+    var url = sendUrl + paramValue;
+    var wpm = $wpmInput.val();
+    if (wpm) {
+      url += "&wpm=" + wpm;
+    }
+    $.ajax(url, { cache: false })
       .fail(function (data) {
         addErrorMessage(data.responseText || data.statusText + ": " + data.state());
       })

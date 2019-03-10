@@ -9,10 +9,13 @@
 const int STATUS_READY_PIN = D7;
 const int STATUS_BUSY_PIN = D6;
 const int MSG_PIN = D5;
-const float WPM = 14.13;
+const float MY_DEFAULT_WPM = 14.13;
+const float MIN_WPM = 2;
+const float MAX_WPM = 50;
 const byte DNS_PORT = 53;
 const String AP_TITLE = "Morse Gate";
 const String MSG_QUERY_STRING_KEY = "msg";
+const String WPM_QUERY_STRING_KEY = "wpm";
 // specifies allowed characters (letters, digits and spaces)
 const char* ALLOWED_MSG_REGEXP = "^[%a%d ]*$";
 const int ALLOWED_MSG_LENGTH = 100;
@@ -23,7 +26,7 @@ ESP8266WebServer webServer(80);
 
 Thread timerThread = Thread();
 Thread statusBusyThread = Thread();
-Morse morse(MSG_PIN, WPM);
+Morse morse(MSG_PIN, MY_DEFAULT_WPM);
 
 String contentType(String filename) {
   if (filename.endsWith(".html")) {
@@ -71,14 +74,31 @@ void updateStatusTask() {
   }
 }
 
-boolean sendMessage(char* message) {
+void sendMessage(char* message) {
   if (morse.busy) {
-    return false;
+    return webServer.send(500, "text/plain", "MorseGate is currently sending a message.");
   } else {
-    Serial.printf("Converting '%s' to beeps...\n", message);
-    digitalWrite(STATUS_BUSY_PIN, HIGH);
-    morse.send(message);
-    return true;
+    float wpmf;
+    if (webServer.hasArg(WPM_QUERY_STRING_KEY)) {
+      String wpmInput = webServer.arg(WPM_QUERY_STRING_KEY);
+      wpmInput.trim();
+      wpmf = wpmInput.toFloat();
+      Serial.printf("Converted wpm to: %f\n", wpmf);
+    } else {
+      wpmf = MY_DEFAULT_WPM;
+    }
+    if (wpmf < MIN_WPM || wpmf > MAX_WPM) {
+      char msgBuffer[70];
+      sprintf(msgBuffer, "Word per minute paramater must be between %3f and %3f\n", MIN_WPM, MAX_WPM);
+      Serial.printf(msgBuffer);
+      return webServer.send(400, "text/plain", msgBuffer);
+    } else {
+      morse.setWPM(wpmf);
+      Serial.printf("Converting '%s' to beeps...\n", message);
+      digitalWrite(STATUS_BUSY_PIN, HIGH);
+      morse.send(message);
+      return webServer.send(200, "text/plain", "Message sent.");
+    }
   }
 }
 
@@ -106,10 +126,8 @@ void handleSendMessage() {
       unsigned int count = ms.MatchCount(ALLOWED_MSG_REGEXP);
       if (count < 1) {
         return webServer.send(400, "text/plain", "Only letters, numbers and spaces are allowed as message characters.");
-      } else if (sendMessage(message)) {
-        return webServer.send(200, "text/plain", "Message sent: '" + argumentValue + "'.");
       } else {
-        return webServer.send(500, "text/plain", "MorseGate is currently sending a message.");
+        sendMessage(message);
       }
     }
   }
