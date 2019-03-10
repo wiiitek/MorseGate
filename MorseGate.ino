@@ -89,8 +89,8 @@ void sendMessage(char* message) {
     }
     if (wpmf < MIN_WPM || wpmf > MAX_WPM) {
       char msgBuffer[70];
-      sprintf(msgBuffer, "Word per minute paramater must be between %3f and %3f\n", MIN_WPM, MAX_WPM);
-      Serial.printf(msgBuffer);
+      sprintf(msgBuffer, "Word per minute paramater must be between %.0f and %.0f.", MIN_WPM, MAX_WPM);
+      Serial.println(msgBuffer);
       return webServer.send(400, "text/plain", msgBuffer);
     } else {
       morse.setWPM(wpmf);
@@ -125,7 +125,7 @@ void handleSendMessage() {
       ms.Target(message);
       unsigned int count = ms.MatchCount(ALLOWED_MSG_REGEXP);
       if (count < 1) {
-        return webServer.send(400, "text/plain", "Only letters, numbers and spaces are allowed as message characters.");
+        return webServer.send(400, "text/plain", "Only english letters, numbers and spaces are allowed as message characters.");
       } else {
         sendMessage(message);
       }
