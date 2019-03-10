@@ -143,11 +143,13 @@ void handleGetStatus() {
 }
 
 void setup() {
-  Serial.begin(9600);
-  Serial.print("\n\n");
-
   pinMode(STATUS_READY_PIN, OUTPUT);
   pinMode(STATUS_BUSY_PIN, OUTPUT);
+  digitalWrite(STATUS_READY_PIN, LOW);
+
+  Serial.begin(9600);
+  Serial.print("\n\n");
+  
   timerThread.onRun(updateMorseTask);
   timerThread.setInterval(1);
   statusBusyThread.onRun(updateStatusTask);
