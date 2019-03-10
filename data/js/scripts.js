@@ -43,7 +43,7 @@ $(document).ready(function () {
       .on('click', dismissError);
     var newError = $('<div/>').addClass("error").append(msg).append($closeIcon);
 
-    $errors.append(newError);
+    $errors.prepend(newError);
     console.log(msg);
   }
 
