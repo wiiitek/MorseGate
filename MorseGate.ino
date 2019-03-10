@@ -179,6 +179,9 @@ void setup() {
     String path = webServer.uri();
     boolean ok = processRequest(path);
     if (!ok) {
+      String userAgent = webServer.header("User-Agent");
+      String referer = webServer.header("Referer");
+      Serial.println("Redirecting to home for User-Agent:\n\t" + userAgent + "\nand Referer:\n\t" + referer);
       boolean showHomePage = processRequest("/");
       if (!showHomePage) {
         webServer.send(404, "text/plain", "404: Page Not Found");
