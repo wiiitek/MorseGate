@@ -1,30 +1,36 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>Morse Gate</title>
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/skeleton.css">
 
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
     }
+
     .table-container {
       display: table;
       height: 100%;
       width: 100%;
     }
+
     .table-block {
       display: table-row;
       height: 1px;
     }
+
     .footer-push {
       height: auto;
     }
+
     #footer {
       /* Placeholder footer styles */
       margin: 5% 0;
@@ -32,11 +38,38 @@
       color: grey;
       font-size: smaller;
     }
+
     .welcome-image {
+      margin-top: 1rem;
       text-align: center;
     }
+
     .welcome-image img {
       width: 25%;
+    }
+
+    button.button-primary.disabled {
+      border: 1px solid #E3E3E3;
+      color: #888;
+      background-color: #f3f3f3;
+      cursor: not-allowed;
+    }
+
+    .error {
+      border: 1px solid #cc2424;
+      color: #cc2424;
+      border-radius: 4px;
+      padding: 6px 40px 6px 10px;
+      position: relative;
+      margin: 4px 0;
+    }
+
+    .error-icon {
+      width: 2rem;
+      position: absolute;
+      cursor: pointer;
+      right: 5px;
+      top: 8px;
     }
   </style>
 </head>
@@ -49,10 +82,25 @@
         <div class="row">
           <div class="twelve columns">
             <div class="welcome-image">
-              <img src="img/morse-code.svg" alt="Morse Code icon"/>
+              <img src="img/morse-code.svg" alt="Morse Code icon" />
             </div>
             <h1>Morse Gate</h1>
-            <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="twelve columns">
+            <label for="exampleMessage">Message</label>
+            <textarea class="u-full-width busy" placeholder="Hi Dave …" id="message"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div class="six columns">
+            <button class="button-primary" id="send-button">Send</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="twelve columns" id="errors">
+            <!-- placeholder for error messages -->
           </div>
         </div>
       </div>
@@ -66,13 +114,19 @@
             Icons made by <a href="https://www.freepik.com/" title="Freepik">Freepik</a>
             from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
             is licensed by
-            <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
+            <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0
+              BY</a>
+            <!-- 
+              and also icon from https://www.iconfinder.com/iconsets/elasto-online-store
+            -->
           </div>
         </footer>
       </div>
     </div>
   </div>
 
+  <script src="js/jquery-3.3.1.min.js"></script>
   <script src="js/scripts.js"></script>
 </body>
+
 </html>

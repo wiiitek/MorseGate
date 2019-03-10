@@ -38,3 +38,11 @@ Required Libraries
 ```
 
 * https://github.com/etherkit/MorseArduino
+
+### RegExp
+
+```
+#include <Regexp.h>
+```
+
+* https://github.com/nickgammon/Regexp

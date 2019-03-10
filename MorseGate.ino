@@ -3,6 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <Thread.h>
 #include <Morse.h>
+#include <Regexp.h>
 #include <FS.h>
 
 const int STATUS_READY_PIN = D7;
@@ -12,6 +13,9 @@ const float WPM = 14.13;
 const byte DNS_PORT = 53;
 const String AP_TITLE = "Morse Gate";
 const String MSG_QUERY_STRING_KEY = "msg";
+// specifies allowed characters (letters, digits and spaces)
+const char* ALLOWED_MSG_REGEXP = "^[%a%d ]*$";
+const int ALLOWED_MSG_LENGTH = 100;
 
 IPAddress apIP(192, 168, 96, 1);
 DNSServer dnsServer;
@@ -67,15 +71,12 @@ void updateStatusTask() {
   }
 }
 
-boolean sendMessage(String msg) {
+boolean sendMessage(char* message) {
   if (morse.busy) {
     return false;
   } else {
-    Serial.println("Converting '" + msg + "' to beeps...");
+    Serial.printf("Converting '%s' to beeps...\n", message);
     digitalWrite(STATUS_BUSY_PIN, HIGH);
-    char message[msg.length()];
-    msg.toCharArray(message, msg.length() + 1);
-    Serial.printf("Sending message: '%s'\n", message);
     morse.send(message);
     return true;
   }
@@ -86,16 +87,29 @@ void handleSendMessage() {
     return webServer.send(400, "text/plain", "Bad request: '" + MSG_QUERY_STRING_KEY + "' query parameter is required!");
   } else {
     String argumentValue = webServer.arg(MSG_QUERY_STRING_KEY);
-    Serial.println("Query string value for msg: '" + argumentValue + "'");
-    argumentValue.trim();
-    if (argumentValue.length() == 0) {
+    if (argumentValue.length() > ALLOWED_MSG_LENGTH) {
+      char msgBuffer[60];
+      sprintf(msgBuffer, "Message is too long: %d characters > %d (max allowed)\n", argumentValue.length(), ALLOWED_MSG_LENGTH);
+      Serial.printf(msgBuffer);
+      return webServer.send(400, "text/plain", msgBuffer);
+    } else if (argumentValue.length() == 0) {
       Serial.println("Blank message - ignoring");
       return webServer.send(200, "text/plain", "Blank message. Ignoring.");
     } else {
-      if (sendMessage(argumentValue)) {
+
+      char message[argumentValue.length()];
+      argumentValue.toCharArray(message, argumentValue.length() + 1);
+      argumentValue.trim();
+
+      MatchState ms;
+      ms.Target(message);
+      unsigned int count = ms.MatchCount(ALLOWED_MSG_REGEXP);
+      if (count < 1) {
+        return webServer.send(400, "text/plain", "Only letters, numbers and spaces are allowed as message characters.");
+      } else if (sendMessage(message)) {
         return webServer.send(200, "text/plain", "Message sent: '" + argumentValue + "'.");
       } else {
-        return webServer.send(500, "text/plain", "Error: MorseGate is currently sending a message.");
+        return webServer.send(500, "text/plain", "MorseGate is currently sending a message.");
       }
     }
   }
@@ -139,9 +153,9 @@ void setup() {
       Serial.println("Content of root folder:");
       Dir dir = SPIFFS.openDir("/");
       while (dir.next()) {
-        Serial.print(dir.fileName());
         File file = dir.openFile("r");
-        Serial.printf("\n\t(%6d bytes)\n", file.size());
+        Serial.printf("%7d bytes: ", file.size());
+        Serial.println(dir.fileName());
         file.close();
       }
       Serial.print("\n");
@@ -165,7 +179,10 @@ void setup() {
     String path = webServer.uri();
     boolean ok = processRequest(path);
     if (!ok) {
-      webServer.send(404, "text/plain", "404: Page Not Found");
+      boolean showHomePage = processRequest("/");
+      if (!showHomePage) {
+        webServer.send(404, "text/plain", "404: Page Not Found");
+      }
     }
   });
 
