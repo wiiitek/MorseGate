@@ -10,7 +10,8 @@ const int STATUS_BUSY_PIN = D6;
 const int MSG_PIN = D5;
 const float WPM = 14.13;
 const byte DNS_PORT = 53;
-const String apTitle = "Morse Gate";
+const String AP_TITLE = "Morse Gate";
+const String MSG_QUERY_STRING_KEY = "msg";
 
 IPAddress apIP(192, 168, 96, 1);
 DNSServer dnsServer;
@@ -18,7 +19,6 @@ ESP8266WebServer webServer(80);
 
 Thread timerThread = Thread();
 Thread statusBusyThread = Thread();
-Thread msgThread = Thread();
 Morse morse(MSG_PIN, WPM);
 
 String contentType(String filename) {
@@ -57,7 +57,7 @@ void updateMorseTask() {
   morse.update();
 }
 
-void statusBusyTask() {
+void updateStatusTask() {
   if (morse.busy) {
     digitalWrite(STATUS_BUSY_PIN, HIGH);
     digitalWrite(STATUS_READY_PIN, LOW);
@@ -67,17 +67,47 @@ void statusBusyTask() {
   }
 }
 
-void msgTask() {
-  
-  if (!morse.busy) {
-    digitalWrite(STATUS_BUSY_PIN, HIGH);
-    //morse.send("SMS000000 SMS111111 SMS222222 SMS333333 SMS444444 SMS555555 SMS666666 SMS777777 SMS888888 SMS999999 0123");
-    //morse.send("SMS000000 SMS111111 SMS222222 SMS333333 SMS444444 SMS555555 SMS666666 SMS777777 SMS888888 SMS999999 ");
-    morse.send("SMS 0123456789");
-    Serial.println("Morse message sent.");
+boolean sendMessage(String msg) {
+  if (morse.busy) {
+    return false;
   } else {
-    Serial.println("Morse system was busy, message not sent.");  
+    Serial.println("Converting '" + msg + "' to beeps...");
+    digitalWrite(STATUS_BUSY_PIN, HIGH);
+    char message[msg.length()];
+    msg.toCharArray(message, msg.length() + 1);
+    Serial.printf("Sending message: '%s'\n", message);
+    morse.send(message);
+    return true;
   }
+}
+
+void handleSendMessage() {
+  if (webServer.args() == 0 || !webServer.hasArg(MSG_QUERY_STRING_KEY)) {
+    return webServer.send(400, "text/plain", "Bad request: '" + MSG_QUERY_STRING_KEY + "' query parameter is required!");
+  } else {
+    String argumentValue = webServer.arg(MSG_QUERY_STRING_KEY);
+    Serial.println("Query string value for msg: '" + argumentValue + "'");
+    argumentValue.trim();
+    if (argumentValue.length() == 0) {
+      Serial.println("Blank message - ignoring");
+      return webServer.send(200, "text/plain", "Blank message. Ignoring.");
+    } else {
+      if (sendMessage(argumentValue)) {
+        return webServer.send(200, "text/plain", "Message sent: '" + argumentValue + "'.");
+      } else {
+        return webServer.send(500, "text/plain", "Error: MorseGate is currently sending a message.");
+      }
+    }
+  }
+}
+
+void handleGetStatus() {
+  if (morse.busy) {
+    return webServer.send(200, "text/plain", "BUSY");
+  } else {
+    return webServer.send(200, "text/plain", "READY");
+  }
+
 }
 
 void setup() {
@@ -88,15 +118,13 @@ void setup() {
   pinMode(STATUS_BUSY_PIN, OUTPUT);
   timerThread.onRun(updateMorseTask);
   timerThread.setInterval(1);
-  statusBusyThread.onRun(statusBusyTask);
-  statusBusyThread.setInterval(10);
-  msgThread.onRun(msgTask);
-  msgThread.setInterval(30000);
+  statusBusyThread.onRun(updateStatusTask);
+  statusBusyThread.setInterval(1);
   Serial.println("Threads initialized");
 
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(apTitle);
+  WiFi.softAP(AP_TITLE);
 
   if (SPIFFS.begin()) {
     Serial.println("SPIFFS initialised");
@@ -113,14 +141,15 @@ void setup() {
       while (dir.next()) {
         Serial.print(dir.fileName());
         File file = dir.openFile("r");
-        Serial.printf(" (%6d bytes)\n", file.size());
+        Serial.printf("\n\t(%6d bytes)\n", file.size());
         file.close();
       }
+      Serial.print("\n");
     } else {
       Serial.println("Errors while getting SPIFFS info");
     }
   } else {
-    Serial.println("Errors while initialising SPIFFS");
+    Serial.println("Errors while initializing SPIFFS");
   }
 
   // replies for all domains
@@ -130,7 +159,8 @@ void setup() {
     Serial.println("Errors while starting DNS server");
   }
 
-  // TODO: add support for POST request with message to encode
+  webServer.on("/msg/send", HTTP_GET, handleSendMessage);
+  webServer.on("/msg/status", HTTP_GET, handleGetStatus);
   webServer.onNotFound([]() {
     String path = webServer.uri();
     boolean ok = processRequest(path);
@@ -149,9 +179,6 @@ void loop() {
   }
   if (statusBusyThread.shouldRun()) {
     statusBusyThread.run();
-  }
-  if (msgThread.shouldRun()) {
-    msgThread.run();
   }
   dnsServer.processNextRequest();
   webServer.handleClient();
