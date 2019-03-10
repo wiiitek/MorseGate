@@ -159,7 +159,7 @@ void setup() {
   WiFi.softAP(AP_TITLE);
 
   if (SPIFFS.begin()) {
-    Serial.println("SPIFFS initialised");
+    Serial.println("SPIFFS initialized");
     FSInfo fs_info;
     boolean infoOk = SPIFFS.info(fs_info);
     if (infoOk) {
