@@ -15,3 +15,10 @@ Required Libraries
 * https://github.com/ivanseidel/ArduinoThread
 
 
+### 
+
+```
+#include <Morse.h>
+```
+
+* https://github.com/etherkit/MorseArduino
