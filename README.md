@@ -3,6 +3,8 @@ MorseGate
 
 [Wemos D1 mini] based [Morse code] message converter.
 
+![Fritzing breadboard schema](./misc/MorseGate.svg)
+
 How to use
 ----------
 
