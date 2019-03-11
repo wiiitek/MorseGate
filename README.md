@@ -1,7 +1,7 @@
 MorseGate
 =========
 
-Wemos D1 mini based Morse code message converter.
+[Wemos D1 mini] based [Morse code] message converter.
 
 How to use
 ----------
@@ -11,7 +11,7 @@ How to use
 Sending message:
 
 ```
-curl -i -v 'http://192.168.96.1/msg/send?msg=sms'
+curl -i -v 'http://192.168.96.1/msg/send?msg=hello%20world'
 ```
 
 Reading current status:
@@ -23,26 +23,29 @@ curl -i -v 'http://192.168.96.1/msg/status'
 Required Libraries
 ------------------
 
-### Thread
+### `#include <Thread.h>`
 
-```
-#include <Thread.h>
-```
+* https://github.com/ivanseidel/ArduinoThread (MIT License)
 
-* https://github.com/ivanseidel/ArduinoThread
 
-### Morse
+### `#include <Morse.h>`
 
-```
-#include <Morse.h>
-```
+* https://github.com/etherkit/MorseArduino (no license specified)
 
-* https://github.com/etherkit/MorseArduino
+Alernatives:
 
-### RegExp
+* https://github.com/willvincent/ArduinoMorse (MIT License)
+* https://github.com/markfickett/arduinomorse (CC BY 3.0)
 
-```
-#include <Regexp.h>
-```
+### `#include <Regexp.h>`
 
-* https://github.com/nickgammon/Regexp
+* https://github.com/nickgammon/Regexp (no license specified)
+
+Alernatives:
+
+* https://gitlab.com/rosie-pattern-language/rosie (MIT License)
+
+
+
+[Wemos D1 mini]: https://wiki.wemos.cc/products:d1:d1_mini
+[Morse code]: https://en.wikipedia.org/wiki/Morse_code
