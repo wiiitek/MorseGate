@@ -1,6 +1,5 @@
 $(document).ready(function () {
   "use strict";
-  var statusUrl = './msg/status';
   var sendUrl = './msg/send?msg=';
   var closeIconUrl = './img/close.svg';
   var $sendButton = $('#send-button');
@@ -38,10 +37,6 @@ $(document).ready(function () {
     $sendButton.toggleClass('disabled', disabled);
   }
 
-  function dismissError() {
-    $(this.parentElement).remove();
-  }
-
   function addErrorMessage(msg) {
     var $closeIcon = $('<img/>')
       .attr('src', 'img/close.svg')
@@ -53,37 +48,7 @@ $(document).ready(function () {
     console.log(msg);
   }
 
-  function setStatus(status) {
-    if (status === 'READY') {
-      $messageInput.addClass('ready');
-      $messageInput.removeClass('busy');
-    } else if (status === 'BUSY') {
-      $messageInput.removeClass('ready');
-      $messageInput.addClass('busy');
-    } else {
-      $messageInput.removeClass('ready');
-      $messageInput.removeClass('busy');
-    }
+  function dismissError() {
+    $(this.parentElement).remove();
   }
-
-  (function updateStatus() {
-    $.ajax(statusUrl, { cache: false })
-      .done(function (data) {
-        setStatus(data);
-        if (data !== 'READY' && data != 'BUSY') {
-          if (!statusErrorReported) {
-            addErrorMessage("Error for status check request.");
-            statusErrorReported = true;
-          }
-        }
-      })
-      .fail(function (data) {
-        if (!statusErrorReported) {
-          addErrorMessage("Error for status check request.");
-          statusErrorReported = true;
-        }
-      })
-    setTimeout(updateStatus, 2500);
-  })();
-
 });
