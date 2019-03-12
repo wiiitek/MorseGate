@@ -3,23 +3,37 @@ MorseGate
 
 [Wemos D1 mini] based [Morse code] message converter.
 
+Just connect to the **Morse Gate** WiFi network and choose *Sign In* option: the **Morse Gate** homepage will be opened.
+
+Front-end part
+--------------
+
+[![Screenshot00](./misc/Screenshot00-s.png)](./misc/Screenshot00.png) [![Screenshot01](./misc/Screenshot01-s.png)](./misc/Screenshot01.png) [![Screenshot02](./misc/Screenshot02-s.png)](./misc/Screenshot02.png) [![Screenshot03](./misc/Screenshot03-s.png)](./misc/Screenshot03.png)
+
+
+Hardware Schema
+---------------
+
 ![Fritzing breadboard schema](./misc/MorseGate.svg)
 
 How to use
 ----------
+
+On mobile devices the *Sign In* option should allow you to see Morse Gate homepage.
+Otherwise open the target page at: http://192.168.168.1.
 
 ### curl
 
 Sending message:
 
 ```
-curl -i -v 'http://192.168.96.1/msg/send?msg=hello%20world'
+curl -i -v 'http://192.168.168.1/msg/send?msg=hello%20world'
 ```
 
 Reading current status:
 
 ```
-curl -i -v 'http://192.168.96.1/msg/status'
+curl -i -v 'http://192.168.168.1/msg/status'
 ```
 
 Required Libraries
