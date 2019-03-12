@@ -20,7 +20,7 @@ const String WPM_QUERY_STRING_KEY = "wpm";
 const char* ALLOWED_MSG_REGEXP = "^[%a%d ]*$";
 const int ALLOWED_MSG_LENGTH = 100;
 
-IPAddress apIP(192, 168, 96, 1);
+IPAddress apIP(192, 168, 168, 1);
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
 
