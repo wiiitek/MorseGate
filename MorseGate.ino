@@ -1,10 +1,12 @@
+#include <FS.h>
+
 #include <ESP8266WiFi.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
+
 #include <Thread.h>
-#include <Morse.h>
-#include <Regexp.h>
-#include <FS.h>
+#include <morse.h>
+
 
 const int STATUS_READY_PIN = D7;
 const int STATUS_BUSY_PIN = D6;
@@ -16,8 +18,6 @@ const byte DNS_PORT = 53;
 const String AP_TITLE = "Morse Gate";
 const String MSG_QUERY_STRING_KEY = "msg";
 const String WPM_QUERY_STRING_KEY = "wpm";
-// specifies allowed characters (letters, digits and spaces)
-const char* ALLOWED_MSG_REGEXP = "^[%a%d ]*$";
 const int ALLOWED_MSG_LENGTH = 100;
 
 IPAddress apIP(192, 168, 168, 1);
@@ -26,7 +26,8 @@ ESP8266WebServer webServer(80);
 
 Thread timerThread = Thread();
 Thread statusBusyThread = Thread();
-Morse morse(MSG_PIN, MY_DEFAULT_WPM);
+//Morse morse(MSG_PIN, MY_DEFAULT_WPM);
+LEDMorseSender morseSender(MSG_PIN, MY_DEFAULT_WPM);
 
 String contentType(String filename) {
   if (filename.endsWith(".html")) {
@@ -40,6 +41,18 @@ String contentType(String filename) {
   } else {
     return "text/plain";
   }
+}
+
+bool containsOnlySupportedChars(String str) {
+  for (int i = 0; i < str.length(); i++) {
+    char c = str.charAt(i);
+    boolean isSupported = isalpha(c) || isdigit(c) || (c == ' ');
+    if (!isSupported) {
+      Serial.printf("Char with code: %d at position %d is unsupported\n", c, i);
+      return false;
+    }
+  }
+  return true;
 }
 
 bool processRequest(String path) {
@@ -61,11 +74,12 @@ bool processRequest(String path) {
 }
 
 void updateMorseTask() {
-  morse.update();
+  // This might be not needed as we update morse in updateTask.. we could join them...
+  morseSender.continueSending();
 }
 
 void updateStatusTask() {
-  if (morse.busy) {
+  if (morseSender.continueSending()) {
     digitalWrite(STATUS_BUSY_PIN, HIGH);
     digitalWrite(STATUS_READY_PIN, LOW);
   } else {
@@ -74,8 +88,8 @@ void updateStatusTask() {
   }
 }
 
-void sendMessage(char* message) {
-  if (morse.busy) {
+void sendMessage(String message) {
+  if (morseSender.continueSending()) {
     return webServer.send(500, "text/plain", "MorseGate is currently sending a message.");
   } else {
     float wpmf;
@@ -83,7 +97,7 @@ void sendMessage(char* message) {
       String wpmInput = webServer.arg(WPM_QUERY_STRING_KEY);
       wpmInput.trim();
       wpmf = wpmInput.toFloat();
-      Serial.printf("Converted wpm to: %f\n", wpmf);
+      Serial.printf("Converted wpm parameter to: %f\n", wpmf);
     } else {
       wpmf = MY_DEFAULT_WPM;
     }
@@ -93,11 +107,12 @@ void sendMessage(char* message) {
       Serial.println(msgBuffer);
       return webServer.send(400, "text/plain", msgBuffer);
     } else {
-      morse.setWPM(wpmf);
-      Serial.printf("Converting '%s' to beeps...\n", message);
+      Serial.println("Converting to beeps: '" + message + "'");
       digitalWrite(STATUS_BUSY_PIN, HIGH);
-      morse.send(message);
-      return webServer.send(200, "text/plain", "Message sent.");
+      morseSender.setWPM(wpmf);
+      morseSender.setMessage(message);
+      morseSender.startSending();
+      return webServer.send(200, "text/plain", "Message is being sent.");
     }
   }
 }
@@ -116,30 +131,25 @@ void handleSendMessage() {
       Serial.println("Blank message - ignoring");
       return webServer.send(200, "text/plain", "Blank message. Ignoring.");
     } else {
-
-      char message[argumentValue.length()];
-      argumentValue.toCharArray(message, argumentValue.length() + 1);
-      argumentValue.trim();
-
-      MatchState ms;
-      ms.Target(message);
-      unsigned int count = ms.MatchCount(ALLOWED_MSG_REGEXP);
-      if (count < 1) {
-        return webServer.send(400, "text/plain", "Only english letters, numbers and spaces are allowed as message characters.");
-      } else {
+      boolean correctChars = containsOnlySupportedChars(argumentValue);
+      if (correctChars) {
+        argumentValue.trim();
+        char message[argumentValue.length()];
+        argumentValue.toCharArray(message, argumentValue.length() + 1);
         sendMessage(message);
+      } else {
+        return webServer.send(400, "text/plain", "Only english letters, numbers and spaces are allowed as message characters.");
       }
     }
   }
 }
 
 void handleGetStatus() {
-  if (morse.busy) {
+  if (morseSender.continueSending()) {
     return webServer.send(200, "text/plain", "BUSY");
   } else {
     return webServer.send(200, "text/plain", "READY");
   }
-
 }
 
 void setup() {
@@ -149,7 +159,7 @@ void setup() {
 
   Serial.begin(9600);
   Serial.print("\n\n");
-  
+
   timerThread.onRun(updateMorseTask);
   timerThread.setInterval(1);
   statusBusyThread.onRun(updateStatusTask);
@@ -159,6 +169,16 @@ void setup() {
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   WiFi.softAP(AP_TITLE);
+
+  boolean allDomainsDns = dnsServer.start(DNS_PORT, "*", apIP);
+  boolean specificDomainDns = dnsServer.start(DNS_PORT, "morse.local", apIP);
+  if (allDomainsDns && specificDomainDns) {
+    Serial.println("DNS server started");
+  } else {
+    Serial.println("Errors while starting DNS server");
+  }
+
+  morseSender.setup();
 
   if (SPIFFS.begin()) {
     Serial.println("SPIFFS initialized");
@@ -184,13 +204,6 @@ void setup() {
     }
   } else {
     Serial.println("Errors while initializing SPIFFS");
-  }
-
-  // replies for all domains
-  if (dnsServer.start(DNS_PORT, "*", apIP)) {
-    Serial.println("DNS server started");
-  } else {
-    Serial.println("Errors while starting DNS server");
   }
 
   webServer.on("/msg/send", HTTP_GET, handleSendMessage);

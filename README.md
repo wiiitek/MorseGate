@@ -3,7 +3,7 @@ MorseGate
 
 [Wemos D1 mini] based [Morse code] message converter.
 
-Just connect to the **Morse Gate** WiFi network and choose *Sign In* option: the **Morse Gate** homepage will be opened.
+[![Attribution-NonCommercial 4.0 International License](http://i.creativecommons.org/l/by-nc/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc/4.0/)
 
 Front-end part
 --------------
@@ -19,8 +19,13 @@ Hardware Schema
 How to use
 ----------
 
-On mobile devices the *Sign In* option should allow you to see Morse Gate homepage.
-Otherwise open the target page at: http://192.168.168.1.
+On mobile devices connect to the **Morse Gate** WiFi network and choose *Sign In* option: the **Morse Gate** homepage will be opened.
+
+### Troubleshooting
+
+If *Sign in* prompt is not shown you might need to open http://192.168.168.1.
+
+If the page is not loading try to disable all other network connections.
 
 ### curl
 
@@ -35,31 +40,6 @@ Reading current status:
 ```
 curl -i -v 'http://192.168.168.1/msg/status'
 ```
-
-Required Libraries
-------------------
-
-### `#include <Thread.h>`
-
-* https://github.com/ivanseidel/ArduinoThread (MIT License)
-
-
-### `#include <Morse.h>`
-
-* https://github.com/etherkit/MorseArduino (no license specified)
-
-Alernatives:
-
-* https://github.com/willvincent/ArduinoMorse (MIT License)
-* https://github.com/markfickett/arduinomorse (CC BY 3.0)
-
-### `#include <Regexp.h>`
-
-* https://github.com/nickgammon/Regexp (no license specified)
-
-Alernatives:
-
-* https://gitlab.com/rosie-pattern-language/rosie (MIT License)
 
 
 
