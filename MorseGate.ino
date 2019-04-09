@@ -20,7 +20,7 @@ const String MSG_QUERY_STRING_KEY = "msg";
 const String WPM_QUERY_STRING_KEY = "wpm";
 const int ALLOWED_MSG_LENGTH = 100;
 
-IPAddress apIP(192, 168, 168, 1);
+IPAddress apIP(10, 10, 10, 10);
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
 
@@ -167,12 +167,11 @@ void setup() {
   Serial.println("Threads initialized");
 
   WiFi.mode(WIFI_AP);
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 0, 0, 0));
   WiFi.softAP(AP_TITLE);
 
   boolean allDomainsDns = dnsServer.start(DNS_PORT, "*", apIP);
-  boolean specificDomainDns = dnsServer.start(DNS_PORT, "morse.local", apIP);
-  if (allDomainsDns && specificDomainDns) {
+  if (allDomainsDns) {
     Serial.println("DNS server started");
   } else {
     Serial.println("Errors while starting DNS server");

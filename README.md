@@ -23,7 +23,7 @@ On mobile devices connect to the **Morse Gate** WiFi network and choose *Sign In
 
 ### Troubleshooting
 
-If *Sign in* prompt is not shown you might need to open http://192.168.168.1.
+If *Sign in* prompt is not shown you might need to open http://10.10.10.10.
 
 If the page is not loading try to disable all other network connections.
 
@@ -32,13 +32,13 @@ If the page is not loading try to disable all other network connections.
 Sending message:
 
 ```
-curl -i -v 'http://192.168.168.1/msg/send?msg=hello%20world'
+curl -i -v 'http://10.10.10.10/msg/send?msg=hello%20world'
 ```
 
 Reading current status:
 
 ```
-curl -i -v 'http://192.168.168.1/msg/status'
+curl -i -v 'http://10.10.10.10/msg/status'
 ```
 
 
